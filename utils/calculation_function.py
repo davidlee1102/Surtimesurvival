@@ -4,6 +4,14 @@ from fractions import Fraction
 
 
 def finding_time_t(u, k, g, c):
+    """
+
+    :param u:
+    :param k:
+    :param g:
+    :param c:
+    :return:
+    """
     if not isinstance(k, int) and k != 0:
         k = Fraction.from_float(k).limit_denominator()
 

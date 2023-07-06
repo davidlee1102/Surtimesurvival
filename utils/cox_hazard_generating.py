@@ -7,6 +7,11 @@ from utils.calculation_function import finding_time_t
 
 
 def input_features(features):
+    """
+
+    :param features:
+    :return:
+    """
     z_max = []
     z_min = []
     features_len = len(features)
@@ -27,6 +32,13 @@ def input_features(features):
 
 
 def input_dataframe(path, cat_feat: list = [], num_feat: list = []):
+    """
+
+    :param path:
+    :param cat_feat:
+    :param num_feat:
+    :return:
+    """
     assert os.path.exists(path), "File not found, please check"
     df = pd.read_csv(path)
     try:
@@ -42,6 +54,12 @@ def input_dataframe(path, cat_feat: list = [], num_feat: list = []):
 
 
 def generate_z(features_df, n_generate):
+    """
+
+    :param features_df:
+    :param n_generate:
+    :return:
+    """
     results = pd.DataFrame()
     for index, row in features_df.iterrows():
         min_val, max_val = row['Z_Min'], row['Z_Max']
@@ -56,6 +74,11 @@ def generate_z(features_df, n_generate):
 
 
 def generate_u(n_generate):
+    """
+
+    :param n_generate:
+    :return:
+    """
     samples = np.random.uniform(0, 1, n_generate)
     samples = pd.DataFrame(samples)
     samples = samples.transpose()
@@ -63,12 +86,28 @@ def generate_u(n_generate):
 
 
 def input_beta(beta_list: list = [], features_len: int = 0):
+    """
+
+    :param beta_list:
+    :param features_len:
+    :return:
+    """
     assert len(beta_list) == features_len, "the length of features is not equal, please check"
     return beta_list
 
 
 def time_failure_calculation(n_generate: int = 5, features: list = [], path: str = "", k: float = 1.5, g: float = 1,
                              beta_list: list = []):
+    """
+
+    :param n_generate:
+    :param features:
+    :param path:
+    :param k:
+    :param g:
+    :param beta_list:
+    :return:
+    """
     if len(beta_list) == 0 or (len(features) == 0 and path is None):
         print("Error in data input, please check")
         return None
@@ -93,3 +132,7 @@ def time_failure_calculation(n_generate: int = 5, features: list = [], path: str
     list_failure_time_df = pd.DataFrame(list_failure_time, columns=['duration'])
     full_generated_data = pd.concat([z_generated_df, list_failure_time_df], axis=1)
     return z_generated_df, features_df.transpose(), list_failure_time_df, full_generated_data
+
+
+def survival_time():
+    return None
