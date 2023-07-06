@@ -1,9 +1,9 @@
 import os
-import math
+
 import numpy as np
 import pandas as pd
 
-from calculation_function import finding_time_t
+from utils.calculation_function import finding_time_t
 
 
 def input_features(features):
@@ -67,13 +67,14 @@ def input_beta(beta_list: list = [], features_len: int = 0):
     return beta_list
 
 
-def time_failure_calculation(n_generate, features, path, k, g, beta_list):
+def time_failure_calculation(n_generate: int = 5, features: list = [], path: str = "", k: float = 1.5, g: float = 1,
+                             beta_list: list = []):
     if len(beta_list) == 0 or (len(features) == 0 and path is None):
         print("Error in data input, please check")
         return None
     if len(features) == 0:
-        time_event_df, min_max_df, features_len = input_dataframe(path)
-        z_generated = generate_z(min_max_df, n_generate)
+        time_event_df, features_df, features_len = input_dataframe(path)
+        z_generated = generate_z(features_df, n_generate)
     else:
         features_len, features_df = input_features(features)
         z_generated = generate_z(features_df, n_generate)
@@ -88,5 +89,7 @@ def time_failure_calculation(n_generate, features, path, k, g, beta_list):
     for i in range(n_generate):
         result = finding_time_t(u[i], k, g, list_harzard[i])
         list_failure_time.append(result)
-
-    return list_failure_time
+    z_generated_df = pd.DataFrame(z_generated).transpose()
+    list_failure_time_df = pd.DataFrame(list_failure_time, columns=['duration'])
+    full_generated_data = pd.concat([z_generated_df, list_failure_time_df], axis=1)
+    return z_generated_df, features_df.transpose(), list_failure_time_df, full_generated_data

@@ -1,4 +1,5 @@
 import math
+
 from fractions import Fraction
 
 
@@ -15,4 +16,3 @@ def finding_time_t(u, k, g, c):
         return t
     else:
         return None  # Return None to indicate no solution
-
