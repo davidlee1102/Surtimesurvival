@@ -10,6 +10,7 @@ import inspect
 import torch.nn.functional as F
 from .config import STConfig
 
+
 class BaseModel(nn.Module):
     def __init__(self, config: STConfig, *inputs, **kwargs):
         super().__init__()
@@ -23,7 +24,6 @@ class BaseModel(nn.Module):
         # Prune heads if needed
         if self.config.pruned_heads:
             self.prune_heads(self.config.pruned_heads)
-
 
         # Initialize weights
         self.apply(self._init_weights)
@@ -49,7 +49,7 @@ class BaseModel(nn.Module):
             self._tie_encoder_decoder_weights(self.encoder, self.decoder, self.base_model_prefix)
 
     def get_head_mask(
-        self, head_mask: Optional[Tensor], num_hidden_layers: int, is_attention_chunked: bool = False
+            self, head_mask: Optional[Tensor], num_hidden_layers: int, is_attention_chunked: bool = False
     ) -> Tensor:
         """
         Prepare the head mask if needed.
@@ -139,11 +139,11 @@ class BaseModel(nn.Module):
             )
 
         def tie_encoder_to_decoder_recursively(
-            decoder_pointer: nn.Module,
-            encoder_pointer: nn.Module,
-            module_name: str,
-            uninitialized_encoder_weights: List[str],
-            depth=0,
+                decoder_pointer: nn.Module,
+                encoder_pointer: nn.Module,
+                module_name: str,
+                uninitialized_encoder_weights: List[str],
+                depth=0,
         ):
             assert isinstance(decoder_pointer, nn.Module) and isinstance(
                 encoder_pointer, nn.Module
@@ -160,7 +160,7 @@ class BaseModel(nn.Module):
             decoder_modules = decoder_pointer._modules
             if len(decoder_modules) > 0:
                 assert (
-                    len(encoder_modules) > 0
+                        len(encoder_modules) > 0
                 ), f"Encoder module {encoder_pointer} does not match decoder module {decoder_pointer}"
 
                 all_encoder_weights = set([module_name + "/" + sub_name for sub_name in encoder_modules.keys()])
@@ -170,7 +170,7 @@ class BaseModel(nn.Module):
                         encoder_name = str(int(name) + encoder_layer_pos)
                         decoder_name = name
                         if not isinstance(decoder_modules[decoder_name], type(encoder_modules[encoder_name])) and len(
-                            encoder_modules
+                                encoder_modules
                         ) != len(decoder_modules):
                             # this can happen if the name corresponds to the position in a list module list of layers
                             # in this case the decoder has added a cross-attention that the encoder does not have
@@ -204,31 +204,73 @@ class BaseModel(nn.Module):
             )
 
 
+# Backup for SurvTrace Bert Embedding
+# class BertEmbeddings(nn.Module):
+#     """Construct the embeddings from word, position and token_type embeddings."""
+#
+#     def __init__(self, config):
+#         super().__init__()
+#         self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size)
+#         self.num_embeddings = nn.Parameter(torch.randn(1, config.num_numerical_feature, config.hidden_size),
+#                                            requires_grad=True)
+#         self.num_embeddings.data.normal_(mean=0.0, std=config.initializer_range)
+#
+#         # self.LayerNorm is not snake-cased to stick with TensorFlow model variable name and be able to load
+#         # any TensorFlow checkpoint file
+#         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+#         self.dropout = nn.Dropout(config.hidden_dropout_prob)
+#
+#     def forward(
+#             self, input_ids=None, input_x_num=None, inputs_embeds=None,
+#     ):
+#         if inputs_embeds is None:
+#             inputs_embeds = self.word_embeddings(input_ids)
+#         num_embeddings = torch.unsqueeze(input_x_num, 2) * self.num_embeddings
+#         embeddings = torch.cat([num_embeddings, inputs_embeds], axis=1)
+#         embeddings = self.dropout(embeddings)
+#         # embeddings = self.LayerNorm(embeddings)
+#         return embeddings
+
+from model.survtimesurvival_model import TransformerClassifier
+
+
 class BertEmbeddings(nn.Module):
     """Construct the embeddings from word, position and token_type embeddings."""
 
     def __init__(self, config):
         super().__init__()
         self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size)
-        self.num_embeddings = nn.Parameter(torch.randn(1, config.num_numerical_feature, config.hidden_size), requires_grad=True)
+        self.num_embeddings = nn.Parameter(torch.randn(1, config.num_numerical_feature, config.hidden_size),
+                                           requires_grad=True)
         self.num_embeddings.data.normal_(mean=0.0, std=config.initializer_range)
 
         # self.LayerNorm is not snake-cased to stick with TensorFlow model variable name and be able to load
         # any TensorFlow checkpoint file
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        # because I want to save the time for testing so I am trying hardcode :V
+        self.our_model = TransformerClassifier(input_dim=21, seq_length=16, embed_dim=64, num_heads=2,
+                                               ffn_hidden_dim=64, num_layers=2)
 
     def forward(
-        self, input_ids=None, input_x_num=None, inputs_embeds=None,
-        ):
-
+            self, input_ids=None, input_x_num=None, inputs_embeds=None, masks=None
+    ):
+        # masks = masks.unsqueeze(0)
+        # our_embeddings = self.our_model()
+        print(input_ids)
+        print("___")
+        print(input_x_num)
+        print("___")
+        print(inputs_embeds)
+        print("___end___")
         if inputs_embeds is None:
             inputs_embeds = self.word_embeddings(input_ids)
-        num_embeddings =  torch.unsqueeze(input_x_num, 2) * self.num_embeddings
+        num_embeddings = torch.unsqueeze(input_x_num, 2) * self.num_embeddings
         embeddings = torch.cat([num_embeddings, inputs_embeds], axis=1)
         embeddings = self.dropout(embeddings)
         # embeddings = self.LayerNorm(embeddings)
         return embeddings
+
 
 class BertSelfAttention(nn.Module):
     def __init__(self, config):
@@ -259,14 +301,14 @@ class BertSelfAttention(nn.Module):
         return x.permute(0, 2, 1, 3)
 
     def forward(
-        self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        past_key_value=None,
-        output_attentions=False,
+            self,
+            hidden_states,
+            attention_mask=None,
+            head_mask=None,
+            encoder_hidden_states=None,
+            encoder_attention_mask=None,
+            past_key_value=None,
+            output_attentions=False,
     ):
         mixed_query_layer = self.query(hidden_states)
 
@@ -338,8 +380,8 @@ class BertSelfAttention(nn.Module):
 
         outputs = (context_layer, attention_probs) if output_attentions else (context_layer,)
 
-
         return outputs
+
 
 class BertSelfOutput(nn.Module):
     def __init__(self, config):
@@ -353,6 +395,7 @@ class BertSelfOutput(nn.Module):
         hidden_states = self.dropout(hidden_states)
         hidden_states = self.LayerNorm(hidden_states + input_tensor)
         return hidden_states
+
 
 class BertAttention(nn.Module):
     def __init__(self, config):
@@ -380,14 +423,14 @@ class BertAttention(nn.Module):
         self.pruned_heads = self.pruned_heads.union(heads)
 
     def forward(
-        self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        past_key_value=None,
-        output_attentions=False,
+            self,
+            hidden_states,
+            attention_mask=None,
+            head_mask=None,
+            encoder_hidden_states=None,
+            encoder_attention_mask=None,
+            past_key_value=None,
+            output_attentions=False,
     ):
         self_outputs = self.self(
             hidden_states,
@@ -446,14 +489,14 @@ class BertLayer(nn.Module):
         self.output = BertOutput(config)
 
     def forward(
-        self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        past_key_value=None,
-        output_attentions=False,
+            self,
+            hidden_states,
+            attention_mask=None,
+            head_mask=None,
+            encoder_hidden_states=None,
+            encoder_attention_mask=None,
+            past_key_value=None,
+            output_attentions=False,
     ):
         # decoder uni-directional self-attention cached key/values tuple is at positions 1,2
         self_attn_past_key_value = past_key_value[:2] if past_key_value is not None else None
@@ -480,6 +523,7 @@ class BertLayer(nn.Module):
         layer_output = self.output(intermediate_output, attention_output)
         return layer_output
 
+
 class DenseVanillaBlock(nn.Module):
     def __init__(self, in_features, out_features, bias=True, batch_norm=True, dropout=0., activation=nn.ReLU,
                  w_init_=lambda w: nn.init.kaiming_normal_(w, nonlinearity='relu')):
@@ -499,6 +543,7 @@ class DenseVanillaBlock(nn.Module):
             input = self.dropout(input)
         return input
 
+
 class BertCLS(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -507,9 +552,9 @@ class BertCLS(nn.Module):
         w_init = lambda w: nn.init.kaiming_normal_(w, nonlinearity="relu")
         # the hidden states are pooled before going to cls layer
         net.append(
-            DenseVanillaBlock(config.hidden_size*config.num_feature, config.intermediate_size,
-                batch_norm=True, dropout=config.hidden_dropout_prob, activation=nn.ReLU,
-                w_init_=w_init)
+            DenseVanillaBlock(config.hidden_size * config.num_feature, config.intermediate_size,
+                              batch_norm=True, dropout=config.hidden_dropout_prob, activation=nn.ReLU,
+                              w_init_=w_init)
         )
         net.append(nn.Linear(config.intermediate_size, config.out_feature))
         self.net = nn.Sequential(*net)
@@ -519,6 +564,7 @@ class BertCLS(nn.Module):
         hidden_states = self.net(hidden_states)
         return hidden_states
 
+
 class BertCLSMulti(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -527,8 +573,8 @@ class BertCLSMulti(nn.Module):
         w_init = lambda w: nn.init.kaiming_normal_(w, nonlinearity="relu")
         net.append(
             DenseVanillaBlock(config.hidden_size * config.num_feature, config.intermediate_size,
-                batch_norm=True, dropout=config.hidden_dropout_prob, activation=nn.ReLU,
-                w_init_=w_init)
+                              batch_norm=True, dropout=config.hidden_dropout_prob, activation=nn.ReLU,
+                              w_init_=w_init)
         )
 
         self.net = nn.Sequential(*net)
@@ -544,30 +590,30 @@ class BertCLSMulti(nn.Module):
         output = self.net_out[event](hidden_states)
         return output
 
+
 class BertEncoder(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.layer = nn.ModuleList([BertLayer(config) 
-                for _ in range(config.num_hidden_layers)])
-    
+        self.layer = nn.ModuleList([BertLayer(config)
+                                    for _ in range(config.num_hidden_layers)])
+
     def forward(
-        self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        output_attentions=False,
-        output_hidden_states=True,
-        ):
+            self,
+            hidden_states,
+            attention_mask=None,
+            head_mask=None,
+            output_attentions=False,
+            output_hidden_states=True,
+    ):
         # decide whether or not return attention and hidden states of all layers
         all_hidden_states = () if output_hidden_states else None
         all_self_attentions = () if output_attentions else None
 
-
         for i, layer_module in enumerate(self.layer):
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
-            
+
             layer_head_mask = head_mask[i] if head_mask is not None else None
 
             layer_outputs = layer_module(
@@ -581,7 +627,7 @@ class BertEncoder(nn.Module):
 
             if output_attentions:
                 all_self_attentions = all_self_attentions + (layer_outputs[1],)
-        
+
         if output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
 
@@ -594,6 +640,7 @@ class BertEncoder(nn.Module):
             ]
             if v is not None
         )
+
 
 def prune_linear_layer(layer: nn.Linear, index: torch.LongTensor, dim: int = 0) -> nn.Linear:
     """
@@ -628,8 +675,9 @@ def prune_linear_layer(layer: nn.Linear, index: torch.LongTensor, dim: int = 0) 
         new_layer.bias.requires_grad = True
     return new_layer
 
+
 def find_pruneable_heads_and_indices(
-    heads: List[int], n_heads: int, head_size: int, already_pruned_heads: Set[int]
+        heads: List[int], n_heads: int, head_size: int, already_pruned_heads: Set[int]
 ) -> Tuple[Set[int], torch.LongTensor]:
     """
     Finds the heads and their indices taking :obj:`already_pruned_heads` into account.
@@ -653,8 +701,9 @@ def find_pruneable_heads_and_indices(
     index: torch.LongTensor = torch.arange(len(mask))[mask].long()
     return heads, index
 
+
 def apply_chunking_to_forward(
-    forward_fn: Callable[..., torch.Tensor], chunk_size: int, chunk_dim: int, *input_tensors
+        forward_fn: Callable[..., torch.Tensor], chunk_size: int, chunk_dim: int, *input_tensors
 ) -> torch.Tensor:
     """
     This function chunks the :obj:`input_tensors` into smaller input tensor parts of size :obj:`chunk_size` over the
@@ -720,4 +769,3 @@ def apply_chunking_to_forward(
         return torch.cat(output_chunks, dim=chunk_dim)
 
     return forward_fn(*input_tensors)
-

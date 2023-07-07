@@ -482,6 +482,7 @@ class Trainer:
         metric,
         '''
         if self.model.config.num_event == 1:
+            print("train with single event")
             return self.train_single_event(
                     train_set=train_set,
                     val_set=val_set,
@@ -494,6 +495,7 @@ class Trainer:
             )
         
         elif self.model.config.num_event > 1:
+            print("train with multiple events")
             return self.train_multi_event(
                     train_set=train_set,
                     val_set=val_set,
