@@ -249,20 +249,14 @@ class BertEmbeddings(nn.Module):
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         # because I want to save the time for testing so I am trying hardcode :V
-        self.our_model = TransformerClassifier(input_dim=21, seq_length=16, embed_dim=64, num_heads=2,
-                                               ffn_hidden_dim=64, num_layers=2)
+        # self.our_model = TransformerClassifier(input_dim=21, seq_length=16, embed_dim=64, num_heads=2,
+        #                                        ffn_hidden_dim=64, num_layers=2)
 
     def forward(
             self, input_ids=None, input_x_num=None, inputs_embeds=None, masks=None
     ):
         # masks = masks.unsqueeze(0)
         # our_embeddings = self.our_model()
-        print(input_ids)
-        print("___")
-        print(input_x_num)
-        print("___")
-        print(inputs_embeds)
-        print("___end___")
         if inputs_embeds is None:
             inputs_embeds = self.word_embeddings(input_ids)
         num_embeddings = torch.unsqueeze(input_x_num, 2) * self.num_embeddings

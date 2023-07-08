@@ -10,10 +10,13 @@ import torch.nn.functional as F
 from .modeling_bert import BaseModel, BertEmbeddings, BertEncoder, BertCLS, BertCLSMulti
 from .utils import pad_col
 from .config import STConfig
+from model.survtimesurvival_model import TransformerClassifier
+
 
 class SurvTraceMulti(BaseModel):
     '''SurvTRACE model for competing events survival analysis.
     '''
+
     def __init__(self, config: STConfig):
         super().__init__(config)
         self.embeddings = BertEmbeddings(config)
@@ -23,6 +26,8 @@ class SurvTraceMulti(BaseModel):
         self.init_weights()
         self.duration_index = config['duration_index']
         self.use_gpu = False
+        self.our_model = TransformerClassifier(input_dim=21, seq_length=16, embed_dim=64, num_heads=2,
+                                               ffn_hidden_dim=64, num_layers=2)
 
     @property
     def duration_index(self):
@@ -46,15 +51,15 @@ class SurvTraceMulti(BaseModel):
         self.embeddings.word_embeddings = value
 
     def forward(
-        self,
-        input_ids=None,
-        input_nums=None,
-        attention_mask=None,
-        head_mask=None,
-        inputs_embeds=None,
-        output_attentions=None,
-        output_hidden_states=None,
-        event=0, # output the prediction for different competing events
+            self,
+            input_ids=None,
+            input_nums=None,
+            attention_mask=None,
+            head_mask=None,
+            inputs_embeds=None,
+            output_attentions=None,
+            output_hidden_states=None,
+            event=0,  # output the prediction for different competing events
     ):
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -87,7 +92,7 @@ class SurvTraceMulti(BaseModel):
 
         encoder_outputs = self.encoder(embedding_output)
         sequence_output = encoder_outputs[0]
-        
+
         predict_logits = self.cls(sequence_output, event=event)
         return sequence_output, predict_logits
 
@@ -100,7 +105,7 @@ class SurvTraceMulti(BaseModel):
         else:
             x_cat = x_input[:, :self.config.num_categorical_feature].long()
             x_num = x_input[:, self.config.num_categorical_feature:].float()
-        
+
         if self.use_gpu:
             x_num = x_num.cuda()
             x_cat = x_cat.cuda()
@@ -109,14 +114,14 @@ class SurvTraceMulti(BaseModel):
         self.eval()
         with torch.no_grad():
             if batch_size is None:
-                    preds = self.forward(x_cat, x_num, event=event)[1]
+                preds = self.forward(x_cat, x_num, event=event)[1]
             else:
                 preds = []
                 num_batch = int(np.ceil(num_sample / batch_size))
                 for idx in range(num_batch):
-                    batch_x_num = x_num[idx*batch_size:(idx+1)*batch_size]
-                    batch_x_cat = x_cat[idx*batch_size:(idx+1)*batch_size]
-                    batch_pred = self.forward(batch_x_cat, batch_x_num,event=event)
+                    batch_x_num = x_num[idx * batch_size:(idx + 1) * batch_size]
+                    batch_x_cat = x_cat[idx * batch_size:(idx + 1) * batch_size]
+                    batch_pred = self.forward(batch_x_cat, batch_x_num, event=event)
                     preds.append(batch_pred[1])
                 preds = torch.cat(preds)
         return preds
@@ -126,16 +131,16 @@ class SurvTraceMulti(BaseModel):
         hazard = F.softplus(preds)
         hazard = pad_col(hazard, where="start")
         return hazard
-    
+
     def predict_risk(self, input_ids, batch_size=None, event=0):
         surv = self.predict_surv(input_ids, batch_size, event=event)
-        return 1- surv
+        return 1 - surv
 
     def predict_surv(self, input_ids, batch_size=None, event=0):
         hazard = self.predict_hazard(input_ids, batch_size, event=event)
         surv = hazard.cumsum(1).mul(-1).exp()
         return surv
-    
+
     def predict_surv_df(self, input_ids, batch_size=None, event=0):
         surv = self.predict_surv(input_ids, batch_size, event=event)
         return pd.DataFrame(surv.to("cpu").numpy().T, self.duration_index)
@@ -144,6 +149,7 @@ class SurvTraceMulti(BaseModel):
 class SurvTraceSingle(BaseModel):
     '''survtrace used for single event survival analysis
     '''
+
     def __init__(self, config):
         super().__init__(config)
         self.embeddings = BertEmbeddings(config)
@@ -176,14 +182,14 @@ class SurvTraceSingle(BaseModel):
         self.embeddings.word_embeddings = value
 
     def forward(
-        self,
-        input_ids=None,
-        input_nums=None,
-        attention_mask=None,
-        head_mask=None,
-        inputs_embeds=None,
-        output_attentions=None,
-        output_hidden_states=None,
+            self,
+            input_ids=None,
+            input_nums=None,
+            attention_mask=None,
+            head_mask=None,
+            inputs_embeds=None,
+            output_attentions=None,
+            output_hidden_states=None,
     ):
         r"""
         encoder_hidden_states  (:obj:`torch.FloatTensor` of shape :obj:`(batch_size, sequence_length, hidden_size)`, `optional`):
@@ -236,7 +242,7 @@ class SurvTraceSingle(BaseModel):
 
         encoder_outputs = self.encoder(embedding_output)
         sequence_output = encoder_outputs[1]
-        
+
         # do pooling
         # sequence_output = (encoder_outputs[1][-2] + encoder_outputs[1][-1]).mean(dim=1)
 
@@ -253,7 +259,7 @@ class SurvTraceSingle(BaseModel):
         else:
             x_cat = x_input[:, :self.config.num_categorical_feature].long()
             x_num = x_input[:, self.config.num_categorical_feature:].float()
-        
+
         if self.use_gpu:
             x_num = x_num.cuda()
             x_cat = x_cat.cuda()
@@ -262,14 +268,14 @@ class SurvTraceSingle(BaseModel):
         self.eval()
         with torch.no_grad():
             if batch_size is None:
-                    preds = self.forward(x_cat, x_num)[1]
+                preds = self.forward(x_cat, x_num)[1]
             else:
                 preds = []
                 num_batch = int(np.ceil(num_sample / batch_size))
                 for idx in range(num_batch):
-                    batch_x_num = x_num[idx*batch_size:(idx+1)*batch_size]
-                    batch_x_cat = x_cat[idx*batch_size:(idx+1)*batch_size]
-                    batch_pred = self.forward(batch_x_cat,batch_x_num)
+                    batch_x_num = x_num[idx * batch_size:(idx + 1) * batch_size]
+                    batch_x_cat = x_cat[idx * batch_size:(idx + 1) * batch_size]
+                    batch_pred = self.forward(batch_x_cat, batch_x_num)
                     preds.append(batch_pred[1])
                 preds = torch.cat(preds)
         return preds
@@ -279,17 +285,17 @@ class SurvTraceSingle(BaseModel):
         hazard = F.softplus(preds)
         hazard = pad_col(hazard, where="start")
         return hazard
-    
+
     def predict_risk(self, input_ids, batch_size=None):
         surv = self.predict_surv(input_ids, batch_size)
-        return 1- surv
+        return 1 - surv
 
     def predict_surv(self, input_ids, batch_size=None, epsilon=1e-7):
         hazard = self.predict_hazard(input_ids, batch_size)
         # surv = (1 - hazard).add(epsilon).log().cumsum(1).exp()
         surv = hazard.cumsum(1).mul(-1).exp()
         return surv
-    
+
     def predict_surv_df(self, input_ids, batch_size=None):
         surv = self.predict_surv(input_ids, batch_size)
         return pd.DataFrame(surv.to("cpu").numpy().T, self.duration_index)
