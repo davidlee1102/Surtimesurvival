@@ -38,6 +38,5 @@ class Custom_SurvTrace(SurvTraceSingle):
             our_mask=None,
     ):
         output = self.our_model(input_nums, our_mask)
-        print(output.shape)
         x = super().forward(input_ids=output[:, :0].long(), input_nums=output)
         return x
