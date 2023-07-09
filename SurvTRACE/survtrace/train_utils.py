@@ -9,6 +9,7 @@ import torch
 from torch.optim import Optimizer
 from torch.nn.utils import clip_grad_norm_
 from torch import optim
+import pandas as pd
 
 from .losses import NLLPCHazardLoss
 
@@ -274,7 +275,9 @@ class Trainer:
 
     def train_single_event(self,
                            train_set,
+                           our_mask_train=None,
                            val_set=None,
+                           our_mask_val=None,
                            batch_size=64,
                            epochs=100,
                            learning_rate=1e-3,
@@ -284,17 +287,24 @@ class Trainer:
                            ):
 
         df_train, df_y_train = train_set
+        df_y_train = pd.DataFrame(df_y_train, columns=['duration', 'event', 'proportion'])
         durations_train, events_train = self.get_target(df_y_train)
+
+        tensor_mask_train = torch.tensor(our_mask_train) if our_mask_train is not None else None
 
         if val_set is not None:
             df_val, df_y_val = val_set
+            df_y_val = pd.DataFrame(df_y_val, columns=['duration', 'event', 'proportion'])
+
             durations_val, events_val = self.get_target(df_y_val)
             tensor_val = torch.tensor(val_set[0].values)
             tensor_y_val = torch.tensor(val_set[1].values)
+            tensor_mask_val = torch.tensor(our_mask_val) if our_mask_val is not None else None
 
         if self.use_gpu:
             tensor_val = tensor_val.cuda()
             tensor_y_val = tensor_y_val.cuda()
+            tensor_mask_val = tensor_mask_val.cuda()
 
         # assign no weight decay on these parameters
         no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
@@ -321,6 +331,7 @@ class Trainer:
             df_train = train_set[0].sample(frac=1)
             df_y_train = train_set[1].loc[df_train.index]
 
+
             tensor_train = torch.tensor(df_train.values)
             tensor_y_train = torch.tensor(df_y_train.values)
             if self.use_gpu:
@@ -332,11 +343,12 @@ class Trainer:
 
                 batch_train = tensor_train[batch_idx * batch_size:(batch_idx + 1) * batch_size]
                 batch_y_train = tensor_y_train[batch_idx * batch_size:(batch_idx + 1) * batch_size]
+                batch_mark_train = tensor_mask_train[batch_idx * batch_size:(batch_idx + 1) * batch_size]
 
                 batch_x_cat = batch_train[:, :self.model.config.num_categorical_feature].long()
                 batch_x_num = batch_train[:, self.model.config.num_categorical_feature:].float()
 
-                phi = self.model(input_ids=batch_x_cat, input_nums=batch_x_num)
+                phi = self.model(input_ids=batch_x_cat, input_nums=batch_x_num, our_mask=batch_mark_train)
 
                 if len(self.metrics) == 1:  # only NLLPCHazardLoss is asigned
                     batch_loss = self.metrics[0](phi[1], batch_y_train[:, 0].long(), batch_y_train[:, 1].long(),
@@ -355,7 +367,7 @@ class Trainer:
             if val_set is not None:
                 self.model.eval()
                 with torch.no_grad():
-                    phi_val = self.model.predict(tensor_val, val_batch_size)
+                    phi_val = self.model.predict(tensor_val, val_batch_size, our_mask=tensor_mask_val)
 
                 val_loss = self.metrics[0](phi_val, tensor_y_val[:, 0].long(), tensor_y_val[:, 1].long(),
                                            tensor_y_val[:, 2].float())
@@ -485,7 +497,9 @@ class Trainer:
 
     def fit(self,
             train_set,
+            our_mask_train=None,
             val_set=None,
+            our_mask_val=None,
             batch_size=64,
             epochs=100,
             learning_rate=1e-3,
@@ -504,7 +518,9 @@ class Trainer:
             print("train with single event")
             return self.train_single_event(
                 train_set=train_set,
+                our_mask_train=our_mask_train,
                 val_set=val_set,
+                our_mask_val=our_mask_val,
                 batch_size=batch_size,
                 epochs=epochs,
                 learning_rate=learning_rate,
