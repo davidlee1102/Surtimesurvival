@@ -100,3 +100,6 @@ class Custom_SurvTrace(SurvTraceSingle):
     def predict_surv_df(self, input_ids, batch_size=None, our_mask=None):
         surv = self.predict_surv(input_ids, batch_size, our_mask)
         return pd.DataFrame(surv.to("cpu").numpy().T, self.duration_index)
+
+
+
