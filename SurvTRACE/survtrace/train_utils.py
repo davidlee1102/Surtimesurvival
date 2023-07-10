@@ -381,7 +381,7 @@ class Trainer:
                 self.model.eval()
                 with torch.no_grad():
                     try:
-                        phi_val = self.model.predict(tensor_val, val_batch_size)
+                        phi_val = self.model.predict(tensor_val, val_batch_size, tensor_masks_val)
                     except Exception as E:
                         print("ERROR")
 
