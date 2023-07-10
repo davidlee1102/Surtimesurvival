@@ -343,6 +343,13 @@ class Trainer:
                 tensor_y_train = torch.tensor(df_y_train.values)
                 tensor_masks_train = masks_train
 
+                # edit here
+                shuffled_indices = torch.randperm(tensor_train.size()[0])
+
+                tensor_train = tensor_train[shuffled_indices]
+                tensor_y_train = tensor_y_train[shuffled_indices]
+                tensor_masks_train = tensor_masks_train[shuffled_indices]
+
                 if self.use_gpu:
                     tensor_y_train = tensor_y_train.cuda()
                     tensor_train = tensor_train.cuda()
