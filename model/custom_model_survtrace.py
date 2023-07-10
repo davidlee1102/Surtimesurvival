@@ -36,7 +36,16 @@ class Custom_SurvTrace(SurvTraceSingle):
             output_attentions=None,
             output_hidden_states=None,
             our_mask=None,
+            **kwargs
     ):
+        # try:
+        #
+        # except Exception as E:
+        #
+        #     print("input_nums: ", input_nums)
+        #     print("___")
+        #     print("our_mark: ", our_mask)
+
         output = self.our_model(input_nums, our_mask)
         x = super().forward(input_ids=output[:, :0].long(), input_nums=output)
         return x
