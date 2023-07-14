@@ -34,14 +34,14 @@ How to install
 git clone https://github.com/davidlee1102/Surtimesurvival.git
 ```
 
-| Attempt                         | SurvTrace                                   | Our First Approaches                        | Our Second Approaches                       | Description                                                            |
-|---------------------------------|---------------------------------------------|---------------------------------------------|---------------------------------------------|------------------------------------------------------------------------|
-| Dealing with missing data       |                                             | <input type="checkbox" disabled checked />  | <input type="checkbox" disabled checked />  |                                                                        |
-| Generate new data               |                                             | <input type="checkbox" disabled checked />  | <input type="checkbox" disabled checked />  |                                                                        |
-| Dealing with independece data   | <input type="checkbox" disabled checked />  | <input type="checkbox" disabled checked />  | <input type="checkbox" disabled checked />  |                                                                        |
-| Dealing with covariate data     |                                             | <input type="checkbox" disabled checked />  | <input type="checkbox" disabled checked />  |                                                                        | 
-| Dealing with multiple event     | <input type="checkbox" disabled checked />  |                                             |                                             | This function is not at the moment right now due to limitation in time |
-| Predict survival, risk, harzard | <input type="checkbox" disabled checked />  | <input type="checkbox" disabled checked />  | <input type="checkbox" disabled checked />  |                                                                        |
+| Attempt                         | SurvTrace | Our First Approaches | Our Second Approaches | Description                                                            |
+|---------------------------------|-----------|----------------------|-----------------------|------------------------------------------------------------------------|
+| Dealing with missing data       |           | ✅                    | ✅                     |                                                                        |
+| Generate new data               |           | ✅                    | ✅                     |                                                                        |
+| Dealing with independece data   | ✅         | ✅                    | ✅                     |                                                                        |
+| Dealing with covariate data     |           | ✅                    | ✅                     |                                                                        | 
+| Dealing with multiple event     | ✅         |                      |                       | This function is not at the moment right now due to limitation in time |
+| Predict survival, risk, harzard | ✅         | ✅                    | ✅                     |                                                                        |
 
 __________
 
