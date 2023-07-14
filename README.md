@@ -12,10 +12,10 @@ Survival Analysis On The Patient With Multiple Visits
 ☀️ ☀️ ☀️ 
 </h4>
 
-### Author
+
 Hung Le Nhat - University of Surrey
 
-### Supervised by:
+### Supervised/ Instructed by:
 
 - Dr. Eng-Jon Ong
 - Prof. Miroslaw Bober
