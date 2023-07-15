@@ -34,6 +34,16 @@ How to install
 git clone https://github.com/davidlee1102/Surtimesurvival.git
 ```
 
+```bash
+pip install -r requirements.txt
+```
+
+#### After that there are some experiments we have proposed inside the tutorial, because of targeting to deal with covariate data, we almost target to PBC2 data
+
+
+----------
+We announced our research and compared with another paper
+
 | Attempt                         | SurvTrace | Our First Approaches | Our Second Approaches | Description                                                            |
 |---------------------------------|-----------|----------------------|-----------------------|------------------------------------------------------------------------|
 | Dealing with missing data       |           | ✅                    | ✅                     |                                                                        |
