@@ -74,8 +74,10 @@ __________
 🤘 This repo is currently developing and fixing, if this repo have any problems or you have any questions/ suggestions, feel free to email us
 </h5>
 ### :smile:If you find this result interesting, please consider to cite this paper:
-```latex
 
+
+```latex
+$This source code is our novel and currently under submission in ML4H (2023)$
 ```
 
 ---
