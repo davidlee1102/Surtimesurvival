@@ -2,9 +2,9 @@
 <h4 align="center">
    ☀️ ☀️ ☀️  
 
-SurvTimesurvival:
+SurvTimeSurvival:
 
-Survival Analysis On The Patient With Multiple Visits
+Survival Analysis On The Patient With Multiple Visits/Records
 
 ☀️ ☀️ ☀️
 </h4>
@@ -21,7 +21,7 @@ __________
 The project will be released in September - 2023
 
 __________
-This repository provide the implementation of SurvTimesurvival and our result that prove our performance
+This repository provide the implementation of SurvTimeSurvival and our result that prove our performance
 
 ----------
 
