@@ -31,7 +31,7 @@ This repository provide the implementation of SurvTimeSurvival and our result th
 git clone https://github.com/davidlee1102/Surtimesurvival.git
 ```
 
-### Setup evironment
+### Setup environment
 
 - Install conda software, which can be found at: `https://www.anaconda.com/`
 - Import survtimesurvival.yml to conda
